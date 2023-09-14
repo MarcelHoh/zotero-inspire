@@ -326,8 +326,12 @@ async function setInspireMeta(item, metaInspire, operation) {
             if (metaInspire.publisher && !item.getField('publisher') && item.itemType == 'book') item.setField('publisher', metaInspire.publisher);
 
             /* set the title and creators if there are none */
-            !item.getField('title') && item.setField('title', metaInspire.title)
-            if (!item.getCreator(0) || !item.getCreator(0).firstName) item.setCreators(metaInspire.creators)
+            // !item.getField('title') && item.setField('title', metaInspire.title)
+            // if (!item.getCreator(0) || !item.getCreator(0).firstName) item.setCreators(metaInspire.creators)
+
+            // always overwrite the creators and title. We trust Inspire more than what we scrapped off arxiv etc.
+            item.setField('title', metaInspire.title)
+            item.setCreators(metaInspire.creators)
 
             // The current arXiv.org Zotero translator put all cross-listed categories after the ID, and the primary category is not the first. Here we replace that list by only the primary one.
             // set the arXiv url, useful to use Find Available PDF for newly added arXiv papers
@@ -372,26 +376,11 @@ async function setInspireMeta(item, metaInspire, operation) {
             // Zotero.debug('setInspire-4')
             extra = setCitations(extra, metaInspire.citation_count, metaInspire.citation_count_wo_self_citations)
 
-            // for erratum, added by FK Guo, date: 2023-08-27
-            // Zotero.debug(`++++metaInspire.note: ${metaInspire.note}`)
+            // add the ERRATUM as an tex.note = to the extra info. This can be exported from zotero easily.
             if (metaInspire.note) {
                 noteIDs = item.getNotes()
-                // check whether the same erratum note is already there
-                let errTag = false
-                for (let id of noteIDs) {
-                    let note = Zotero.Items.get(id);
-                    let noteHTML = note.getNote().replace('–', '-').replace('--', '-');
-                    if (noteHTML.includes(metaInspire.note)) {
-                        errTag = true
-                    }
-                    // Zotero.debug(`=======+++++++ ${id} : ${errTag}`)
-                } 
-                if (!errTag) {
-                    let newNote = new Zotero.Item('note')
-                    newNote.setNote(metaInspire.note);
-                    newNote.parentID = item.id;
-                    await newNote.saveTx();
-                    newNote
+                if (!extra.includes('tex.note = ')) {
+                    extra += "\n"+"tex.note =  " + metaInspire.note
                 }
             }
 
@@ -441,17 +430,21 @@ function setCitations(extra, citation_count, citation_count_wo_self_citations) {
 
 /**
  * remove the note from adding the paper from arXiv, which normally contains only the numbers of pages and figures
- * @param {*} item 
- */
+ * @param {*} item
+
 async function removeArxivNote(item) {
    let noteIDs = item.getNotes();
      for (let id of noteIDs) {
        let note = Zotero.Items.get(id);
        let noteHTML = note.getNote();
        Zotero.debug(`note content: ${noteHTML}`)
-     } 
-} 
+       if noteHTML.startsWith('Comment: ') {
+         Zotero.debug()
 
+    }
+     } 
+}
+ */
 
 // Preference managers
 
@@ -686,7 +679,7 @@ Zotero.Inspire.updateNextItem = function (operation) {
 Zotero.Inspire.updateItem = async function (item, operation) {
     if (operation === "full" || operation === "noabstract" || operation === "citations") {
 
-        await removeArxivNote(item)
+        // await removeArxivNote(item)
 
         const metaInspire = await getInspireMeta(item, operation);
         // if (metaInspire !== {}) {
