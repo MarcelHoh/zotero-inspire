@@ -439,18 +439,18 @@ function setCitations(extra, citation_count, citation_count_wo_self_citations) {
 }
 
 
-// /**
-//  * remove the note from adding the paper from arXiv, which normally contains only the numbers of pages and figures
-//  * @param {*} item 
-//  */
-// async function removeArxivNote(item) {
-//     let noteIDs = item.getNotes();
-//     for (let id of noteIDs) {
-//         let note = Zotero.Items.get(id);
-//         let noteHTML = note.getNote();
-//         Zotero.debug(`note content: ${noteHTML}`)
-//     } 
-// } 
+/**
+ * remove the note from adding the paper from arXiv, which normally contains only the numbers of pages and figures
+ * @param {*} item 
+ */
+async function removeArxivNote(item) {
+   let noteIDs = item.getNotes();
+     for (let id of noteIDs) {
+       let note = Zotero.Items.get(id);
+       let noteHTML = note.getNote();
+       Zotero.debug(`note content: ${noteHTML}`)
+     } 
+} 
 
 
 // Preference managers
@@ -686,7 +686,7 @@ Zotero.Inspire.updateNextItem = function (operation) {
 Zotero.Inspire.updateItem = async function (item, operation) {
     if (operation === "full" || operation === "noabstract" || operation === "citations") {
 
-        // await removeArxivNote(item)
+        await removeArxivNote(item)
 
         const metaInspire = await getInspireMeta(item, operation);
         // if (metaInspire !== {}) {
